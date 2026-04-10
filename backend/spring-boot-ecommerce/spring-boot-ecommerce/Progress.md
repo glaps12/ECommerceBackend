@@ -8,7 +8,7 @@ Single source of truth for **what was done**, **what’s in progress**, and **wh
 - Prefer checklists; link to files/paths when helpful.
 
 ## Now (in progress)
-- [ ] **CORS centralization**: Replace per-repository `@CrossOrigin("http://localhost:4200")` annotations on `ProductRepository` and `ProductCategoryRepository` with a single global CORS config in `MyDataRestConfig` (or a dedicated `WebMvcConfigurer`). Allows configurable allowed origins.
+- [x] **CORS centralization**: Replace per-repository `@CrossOrigin("http://localhost:4200")` annotations on `ProductRepository` and `ProductCategoryRepository` with a single global CORS config in `MyDataRestConfig` (or a dedicated `WebMvcConfigurer`). Allows configurable allowed origins.
 - [ ] **Externalize DB credentials**: Move `spring.datasource.username/password` out of `application.properties` into environment variables or a `application-local.properties` (gitignored) to avoid committing credentials.
 
 ## Next (planned soon)
@@ -20,7 +20,7 @@ Single source of truth for **what was done**, **what’s in progress**, and **wh
 - [ ] **PATCH support for cart/order**: Once checkout exists, consider enabling `PATCH` for order status updates (admin use case).
 
 ## Later (ideas / backlog)
-- [ ] **Spring Security**: Add JWT-based authentication (login/register endpoints) + role-based authorization (ADMIN for product CRUD, USER for checkout).
+- [ ] **Spring Security (JWT)**: We have local Registration, Login, and Email Verification built (`AuthController`). Next, swap `.anyRequest().permitAll()` in `SecurityConfig` to require actual JWT tokens and implement role-based auth (ADMIN for product CRUD, USER for checkout).
 - [ ] **Payment integration**: Integrate Stripe (or PayPal) for payment processing in the checkout flow.
 - [ ] **Product image upload**: Admin endpoint to upload/update product images (store in S3 or local filesystem).
 - [ ] **Product sorting API**: Expose `Sort` parameter support in `findByCategoryId` and `findByNameContaining` (frontend will send `sort=unitPrice,asc`).
@@ -31,6 +31,17 @@ Single source of truth for **what was done**, **what’s in progress**, and **wh
 - [ ] **Caching**: Add Spring Cache (`@Cacheable`) on product categories (rarely change) for better performance.
 
 ## Log (reverse chronological)
+
+### 2026-04-09
+- **Added**: Enhanced `UpdateUserRequest` DTO and `AuthController.updateUser` logic to support partial profile updates (firstName, lastName) and secure password rotation.
+- **Added**: Security-first password update flow requiring `currentPassword` verification via `passwordEncoder.matches()` before allowing a `newPassword` to be persisted. Returns `UNAUTHORIZED (401)` for incorrect current passwords.
+- **Fixed**: Robust validation for profile names and email uniqueness checks during user setting updates.
+
+### 2026-04-08
+- **Added**: Centralized CORS config via `SecurityConfig` to replace scattered cross-origin annotations.
+- **Added**: Initial `User` entity, `UserRepository`, and local `AuthController` to handle User Registration, Login, and Email Verification logic. 
+- **Fixed**: Application startup failure due to missing SMTP configuration by injecting mock `spring.mail` properties in `application.properties`. Built `EmailService` to gracefully degrade and print verification codes to STDOUT instead of crashing.
+- **Fixed**: Hardened `AuthController.java` to explicitly prevent duplicate email signups with reliable 409 responses and robust punctuation for all error/success texts. Protected initial `firstName` strings from being polluted with email name-splits.
 
 ### 2026-04-04
 - **Fixed**: Replaced deprecated `org.hibernate.dialect.MySQL8Dialect` with `org.hibernate.dialect.MySQLDialect` in `application.properties` (deprecated in Hibernate 6.x / Spring Boot 3.3.x).
