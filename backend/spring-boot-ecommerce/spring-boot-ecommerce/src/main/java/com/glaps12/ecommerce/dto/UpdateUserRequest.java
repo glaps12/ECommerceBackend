@@ -22,4 +22,8 @@ public class UpdateUserRequest {
 
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String newPassword;
+
+    private String phoneNumber;
+
+    private String birthDate; // Sending as String (ISO) from frontend is easier
 }
