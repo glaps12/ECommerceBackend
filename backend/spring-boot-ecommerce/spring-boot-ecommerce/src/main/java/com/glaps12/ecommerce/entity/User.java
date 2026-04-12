@@ -38,6 +38,12 @@ public class User {
     @Column(name = "verification_code", length = 64)
     private String verificationCode;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "birth_date")
+    private java.time.LocalDate birthDate;
+
     @Column(name = "date_created")
     @CreationTimestamp
     private Date dateCreated;

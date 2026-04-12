@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 import java.util.Random;
 
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:4200")
@@ -37,7 +40,7 @@ public class AuthController {
         if (userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
-                    .body(new AuthResponse(false, "Email is already in use.", request.getEmail(), null));
+                    .body(new AuthResponse(false, "Email is already in use.", request.getEmail(), null, null, null, null));
         }
 
         User user = new User();
@@ -59,7 +62,7 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(new AuthResponse(true, "Please check your email for the verification code.", user.getEmail(),
-                        null));
+                        null, null, null, null));
     }
 
     @PostMapping("/login")
@@ -70,7 +73,7 @@ public class AuthController {
         if (optionalUser.isEmpty()) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponse(false, "Invalid email or password.", null, null));
+                    .body(new AuthResponse(false, "Invalid email or password.", null, null, null, null, null));
         }
 
         User user = optionalUser.get();
@@ -78,17 +81,17 @@ public class AuthController {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponse(false, "Invalid email or password.", null, null));
+                    .body(new AuthResponse(false, "Invalid email or password.", null, null, null, null, null));
         }
 
         if (!user.isEnabled()) {
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
-                    .body(new AuthResponse(false, "Please verify your email first.", user.getEmail(), null));
+                    .body(new AuthResponse(false, "Please verify your email first.", user.getEmail(), null, null, null, null));
         }
 
         return ResponseEntity.ok(
-                new AuthResponse(true, "Login successful.", user.getEmail(), user.getFirstName()));
+                new AuthResponse(true, "Login successful.", user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhoneNumber(), user.getBirthDate() != null ? user.getBirthDate().toString() : null));
     }
 
     @PostMapping("/verify-email")
@@ -98,7 +101,7 @@ public class AuthController {
         if (optionalUser.isEmpty()) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthResponse(false, "User not found.", null, null));
+                    .body(new AuthResponse(false, "User not found.", null, null, null, null, null));
         }
 
         User user = optionalUser.get();
@@ -106,13 +109,13 @@ public class AuthController {
         if (user.isEnabled()) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthResponse(false, "Email is already verified.", null, null));
+                    .body(new AuthResponse(false, "Email is already verified.", null, null, null, null, null));
         }
 
         if (user.getVerificationCode() == null || !user.getVerificationCode().equals(request.getCode())) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthResponse(false, "Invalid verification code.", null, null));
+                    .body(new AuthResponse(false, "Invalid verification code.", null, null, null, null, null));
         }
 
         user.setEnabled(true);
@@ -120,17 +123,31 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.ok(
-                new AuthResponse(true, "Email verified successfully.", user.getEmail(), user.getFirstName()));
+                new AuthResponse(true, "Email verified successfully.", user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhoneNumber(), user.getBirthDate() != null ? user.getBirthDate().toString() : null));
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<AuthResponse> getProfile(@RequestParam String email) {
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new AuthResponse(false, "User not found.", null, null, null, null, null));
+        }
+        User user = optionalUser.get();
+        return ResponseEntity.ok(
+                new AuthResponse(true, "Profile retrieved successfully.", user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhoneNumber(), user.getBirthDate() != null ? user.getBirthDate().toString() : null));
     }
 
     @PutMapping("/update")
+    @Transactional
     public ResponseEntity<AuthResponse> updateUser(@Valid @RequestBody com.glaps12.ecommerce.dto.UpdateUserRequest request, @RequestParam String currentEmail) {
         Optional<User> optionalUser = userRepository.findByEmail(currentEmail);
 
         if (optionalUser.isEmpty()) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
-                    .body(new AuthResponse(false, "User not found.", null, null));
+                    .body(new AuthResponse(false, "User not found.", null, null, null, null, null));
         }
 
         User user = optionalUser.get();
@@ -139,7 +156,7 @@ public class AuthController {
         if (!currentEmail.equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
-                    .body(new AuthResponse(false, "New email is already in use.", null, null));
+                    .body(new AuthResponse(false, "New email is already in use.", null, null, null, null, null));
         }
 
         user.setEmail(request.getEmail());
@@ -156,14 +173,25 @@ public class AuthController {
             if (request.getCurrentPassword() == null || !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
-                        .body(new AuthResponse(false, "Current password is incorrect.", null, null));
+                        .body(new AuthResponse(false, "Current password is incorrect.", null, null, null, null, null));
             }
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+        if (request.getBirthDate() != null && !request.getBirthDate().isBlank()) {
+            try {
+                user.setBirthDate(LocalDate.parse(request.getBirthDate()));
+            } catch (Exception e) {
+                // Ignore parse errors
+            }
         }
 
         userRepository.save(user);
 
         return ResponseEntity.ok(
-                new AuthResponse(true, "Settings updated successfully.", user.getEmail(), user.getFirstName()));
+                new AuthResponse(true, "Your personal details have been successfully changed.", user.getEmail(), user.getFirstName(), user.getLastName(), user.getPhoneNumber(), user.getBirthDate() != null ? user.getBirthDate().toString() : null));
     }
 }
