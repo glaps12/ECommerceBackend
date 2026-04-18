@@ -32,6 +32,13 @@ Single source of truth for **what was done**, **what’s in progress**, and **wh
 
 ## Log (reverse chronological)
 
+### 2026-04-12
+- **Added**: Extended `User` entity with `phoneNumber` and `birthDate` fields to support richer user profiles.
+- **Added**: Implemented profile synchronization endpoint in `AuthController` to return full `User` details (including surname/lastName) for frontend initialization.
+- **Improved**: Enhanced `updateUser` logic to handle optional password updates and correctly persist new profile fields.
+- **Fixed**: Resolved data mapping issues where user attributes were inconsistent between login and registration responses.
+- **Refined**: Synchronized frontend logic to restrict phone numbers to 10 digits starting with 5 (per +90 region conventions) and implemented validation to reject leading zeros.
+
 ### 2026-04-09
 - **Added**: Enhanced `UpdateUserRequest` DTO and `AuthController.updateUser` logic to support partial profile updates (firstName, lastName) and secure password rotation.
 - **Added**: Security-first password update flow requiring `currentPassword` verification via `passwordEncoder.matches()` before allowing a `newPassword` to be persisted. Returns `UNAUTHORIZED (401)` for incorrect current passwords.
