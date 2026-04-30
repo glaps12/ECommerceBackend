@@ -1,0 +1,5 @@
+# Copy this file to application-local.properties and fill in your values.
+# application-local.properties is gitignored — never commit real credentials.
+# Activate with: --spring.profiles.active=local  (or set in IntelliJ Run Config)
+spring.datasource.username=YOUR_DB_USER
+spring.datasource.password=YOUR_DB_PASSWORD

@@ -9,7 +9,7 @@ Single source of truth for **what was done**, **what’s in progress**, and **wh
 
 ## Now (in progress)
 - [x] **CORS centralization**: Replace per-repository `@CrossOrigin("http://localhost:4200")` annotations on `ProductRepository` and `ProductCategoryRepository` with a single global CORS config in `MyDataRestConfig` (or a dedicated `WebMvcConfigurer`). Allows configurable allowed origins.
-- [ ] **Externalize DB credentials**: Move `spring.datasource.username/password` out of `application.properties` into environment variables or a `application-local.properties` (gitignored) to avoid committing credentials.
+- [x] **Externalize DB credentials**: Move `spring.datasource.username/password` out of `application.properties` into environment variables or a `application-local.properties` (gitignored) to avoid committing credentials.
 
 ## Next (planned soon)
 - [ ] **Checkout domain**: Add `Customer`, `Address`, `Order`, `OrderItem` entities + repositories. Create a `CheckoutController` REST endpoint (`POST /api/checkout/purchase`) to receive orders from the frontend.
@@ -31,6 +31,13 @@ Single source of truth for **what was done**, **what’s in progress**, and **wh
 - [ ] **Caching**: Add Spring Cache (`@Cacheable`) on product categories (rarely change) for better performance.
 
 ## Log (reverse chronological)
+
+### 2026-04-24
+- **Hardened**: Externalized DB credentials out of `application.properties`.
+  - `spring.datasource.username/password` now read from env vars `DB_USERNAME` / `DB_PASSWORD` (with `CHANGE_ME` sentinel so startup fails loudly if neither is set).
+  - Created gitignored `src/main/resources/application-local.properties` holding the actual dev defaults (`ecommerceapp / ecommerceapp`); activate with `--spring.profiles.active=local`.
+  - Committed `application-local.properties.example` as an onboarding template for new contributors.
+  - Added `src/main/resources/application-local.properties` to `.gitignore`.
 
 ### 2026-04-12
 - **Added**: Extended `User` entity with `phoneNumber` and `birthDate` fields to support richer user profiles.
